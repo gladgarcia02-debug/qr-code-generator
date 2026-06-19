@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' ? title : 'QR Code Generator' %></title>
+  <meta name="description" content="Generate free, permanent QR codes for text, URLs, emails, and phone numbers. Download instantly as PNG." />
+
+  <!-- Google Fonts: Space Grotesk for display headings, Inter for body text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>▦</text></svg>">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a href="/" class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="0" y="0" width="9" height="9" fill="currentColor"/>
+            <rect x="13" y="0" width="9" height="9" fill="currentColor"/>
+            <rect x="0" y="13" width="9" height="9" fill="currentColor"/>
+            <rect x="15" y="15" width="3" height="3" fill="currentColor"/>
+            <rect x="19" y="15" width="3" height="3" fill="currentColor"/>
+            <rect x="15" y="19" width="3" height="3" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="brand__text">QR<span class="brand__accent">Forge</span></span>
+      </a>
+      <nav class="topbar__nav">
+        <a href="/dashboard" class="topbar__nav-link">Dashboard</a>
+        <span class="topbar__tag">No tracking &middot; No account</span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">

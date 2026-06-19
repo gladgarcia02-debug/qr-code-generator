@@ -1,0 +1,10 @@
+<%- include('partials/header', { title: 'Scanned Content' }) %>
+
+  <section class="error-page">
+    <p class="hero__eyebrow" style="text-align:center;">Scanned content</p>
+    <div class="result-meta" style="max-width: 480px; margin: 24px auto; color: var(--text-on-paper);">
+      <p class="result-meta__value" style="white-space: pre-wrap;"><%= content %></p>
+    </div>
+  </section>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,185 @@
+<%- include('partials/header', { title: 'QR Code Generator' }) %>
+
+  <section class="hero">
+    <p class="hero__eyebrow">Free &amp; permanent</p>
+    <h1 class="hero__title">Turn anything into a scannable square.</h1>
+    <p class="hero__subtitle">
+      Text, links, emails, or phone numbers — encoded into a QR code that
+      opens with any phone camera. Make it permanent, or set it to expire automatically.
+    </p>
+  </section>
+
+  <section class="workspace">
+
+    <!-- ====================== LEFT: INPUT PANEL ====================== -->
+    <div class="panel panel--form">
+      <h2 class="panel__title">1. Encode your content</h2>
+
+      <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+        <div class="alert alert--error" role="alert">
+          <strong>Please fix the following:</strong>
+          <ul>
+            <% errors.forEach(function(err) { %>
+              <li><%= err.msg %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form action="/generate" method="POST" id="qrForm" novalidate>
+
+        <fieldset class="type-tabs">
+          <legend class="field-label">Content type</legend>
+
+          <% const types = [
+               { value: 'text',  label: 'Text' },
+               { value: 'url',   label: 'URL' },
+               { value: 'email', label: 'Email' },
+               { value: 'phone', label: 'Phone' }
+             ];
+             const currentType = (typeof formData !== 'undefined' && formData.qrType) ? formData.qrType : 'url';
+          %>
+
+          <% types.forEach(function(t) { %>
+            <label class="type-tab">
+              <input
+                type="radio"
+                name="qrType"
+                value="<%= t.value %>"
+                <%= currentType === t.value ? 'checked' : '' %>
+              />
+              <span><%= t.label %></span>
+            </label>
+          <% }) %>
+        </fieldset>
+
+        <div class="field">
+          <label for="qrText" class="field-label">Content</label>
+          <input
+            type="text"
+            id="qrText"
+            name="qrText"
+            class="field-input"
+            placeholder="https://example.com"
+            maxlength="2000"
+            value="<%= (typeof formData !== 'undefined' && formData.qrText) ? formData.qrText : '' %>"
+            required
+          />
+          <p class="field-hint" id="qrTextHint">Enter a web address, including or excluding "https://".</p>
+        </div>
+
+        <div class="field">
+          <label for="qrSize" class="field-label">Output size</label>
+          <select id="qrSize" name="qrSize" class="field-input field-input--select">
+            <% const sizes = [200, 300, 400, 500];
+               const currentSize = (typeof formData !== 'undefined' && formData.qrSize) ? parseInt(formData.qrSize, 10) : 300;
+            %>
+            <% sizes.forEach(function(s) { %>
+              <option value="<%= s %>" <%= currentSize === s ? 'selected' : '' %>>
+                <%= s %> &times; <%= s %> px <%= s === 300 ? '(recommended)' : '' %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="expiryUnit" class="field-label">Expiration</label>
+          <div class="expiry-row">
+            <input
+              type="number"
+              id="expiryValue"
+              name="expiryValue"
+              class="field-input expiry-row__value"
+              min="1"
+              max="1000"
+              placeholder="e.g. 30"
+              value="<%= (typeof formData !== 'undefined' && formData.expiryValue) ? formData.expiryValue : '' %>"
+              <%= (typeof formData !== 'undefined' && formData.expiryUnit && formData.expiryUnit !== 'never') ? '' : 'disabled' %>
+            />
+            <select id="expiryUnit" name="expiryUnit" class="field-input field-input--select expiry-row__unit">
+              <% const expiryUnits = [
+                   { value: 'never',   label: 'Never Expires' },
+                   { value: 'minutes', label: 'Minutes' },
+                   { value: 'hours',   label: 'Hours' },
+                   { value: 'days',    label: 'Days' },
+                   { value: 'months',  label: 'Months' },
+                   { value: 'years',   label: 'Years' },
+                 ];
+                 const currentUnit = (typeof formData !== 'undefined' && formData.expiryUnit) ? formData.expiryUnit : 'never';
+              %>
+              <% expiryUnits.forEach(function(u) { %>
+                <option value="<%= u.value %>" <%= currentUnit === u.value ? 'selected' : '' %>>
+                  <%= u.label %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+          <p class="field-hint">Choose "Never Expires" for a permanent code, or set a duration after which it stops working.</p>
+        </div>
+
+        <button type="submit" class="btn btn--primary" id="generateBtn">
+          Generate QR code
+        </button>
+      </form>
+    </div>
+
+    <!-- ===================== RIGHT: RESULT PANEL ====================== -->
+    <div class="panel panel--result">
+      <h2 class="panel__title">2. Scan or download</h2>
+
+      <div class="result-card">
+
+        <!-- Decorative corner brackets, echoing a real QR code's finder patterns -->
+        <span class="finder finder--tl" aria-hidden="true"></span>
+        <span class="finder finder--tr" aria-hidden="true"></span>
+        <span class="finder finder--bl" aria-hidden="true"></span>
+
+        <% if (typeof qrImage !== 'undefined' && qrImage) { %>
+          <img src="<%= qrImage %>" alt="Generated QR code" class="result-card__image" id="qrImagePreview" />
+        <% } else { %>
+          <div class="result-card__placeholder">
+            <div class="dot-grid" aria-hidden="true">
+              <% for (let i = 0; i < 25; i++) { %><span></span><% } %>
+            </div>
+            <p>Your QR code will appear here</p>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (typeof qrImage !== 'undefined' && qrImage) { %>
+        <div class="result-meta">
+          <p class="result-meta__label">
+            <% if (typeof expiresAt !== 'undefined' && expiresAt) { %>
+              Expires <%= new Date(expiresAt).toLocaleString() %>
+            <% } else { %>
+              Never expires
+            <% } %>
+          </p>
+          <p class="result-meta__value"><%= encodedData %></p>
+        </div>
+
+        <% if (typeof targetUrl !== 'undefined' && targetUrl) { %>
+          <div class="result-meta" style="margin-top: 10px;">
+            <p class="result-meta__label">Scanning leads to</p>
+            <p class="result-meta__value"><%= targetUrl %></p>
+          </div>
+        <% } %>
+
+        <div class="result-actions">
+          <a
+            href="/download?data=<%= encodeURIComponent(encodedData) %>&size=<%= (typeof formData !== 'undefined' && formData.qrSize) ? formData.qrSize : 300 %>"
+            class="btn btn--secondary"
+            download="qrcode.png"
+          >
+            Download PNG
+          </a>
+          <a href="/" class="btn btn--ghost">Start over</a>
+        </div>
+      <% } else { %>
+        <p class="result-empty-note">Fill out the form and select "Generate QR code" — your image and download link will show up right here.</p>
+      <% } %>
+    </div>
+
+  </section>
+
+<%- include('partials/footer') %>

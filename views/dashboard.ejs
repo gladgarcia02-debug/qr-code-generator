@@ -1,0 +1,64 @@
+<%- include('partials/header', { title: 'QR Code Dashboard' }) %>
+
+  <section class="hero hero--compact">
+    <p class="hero__eyebrow">All codes</p>
+    <h1 class="hero__title">Dashboard</h1>
+    <p class="hero__subtitle">Every QR code you've generated, with its live status and time remaining.</p>
+  </section>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <section class="panel panel--table">
+    <% if (!rows || rows.length === 0) { %>
+      <p class="result-empty-note">No QR codes yet. <a href="/" style="color: var(--accent);">Generate your first one</a>.</p>
+    <% } else { %>
+      <div class="table-scroll">
+        <table class="qr-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Type</th>
+              <th>Target</th>
+              <th>Created</th>
+              <th>Expires</th>
+              <th>Status</th>
+              <th>Time Remaining</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rows.forEach(function(row) { %>
+              <tr>
+                <td class="qr-table__mono"><%= row.qr_code %></td>
+                <td><%= row.type %></td>
+                <td class="qr-table__truncate" title="<%= row.target_url %>"><%= row.target_url %></td>
+                <td><%= new Date(row.created_at).toLocaleString() %></td>
+                <td><%= row.expires_at ? new Date(row.expires_at).toLocaleString() : '—' %></td>
+                <td>
+                  <% if (row.status === 'active') { %>
+                    <span class="badge badge--active">Active</span>
+                  <% } else if (row.status === 'expired') { %>
+                    <span class="badge badge--expired">Expired</span>
+                  <% } else { %>
+                    <span class="badge badge--revoked">Revoked</span>
+                  <% } %>
+                </td>
+                <td><%= row.timeRemaining %></td>
+                <td>
+                  <% if (row.status === 'active') { %>
+                    <form action="/qr/<%= row.qr_code %>/revoke" method="POST" onsubmit="return confirm('Revoke this QR code? It will stop working immediately.');">
+                      <button type="submit" class="btn-link btn-link--danger">Revoke</button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </section>
+
+<%- include('partials/footer') %>
