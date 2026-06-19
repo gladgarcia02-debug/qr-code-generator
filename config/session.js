@@ -18,6 +18,7 @@ if (!process.env.SESSION_SECRET) {
     'SESSION_SECRET is not set. Add a long, random value to your .env file ' +
     '(e.g. `node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"`).'
   );
+    console.log('SESSION_SECRET in session.js:', process.env.SESSION_SECRET);
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
