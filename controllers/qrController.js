@@ -52,8 +52,15 @@ async function generateQR(req, res) {
     const expiresAt = calculateExpiryDate(expiryValue, expiryUnit);
 
     // Persist the record first so we have its qr_code ID to build the
-    // scan URL that actually gets encoded into the image.
-    const record = await qrStore.createRecord({ type: qrType, targetUrl, expiresAt });
+    // scan URL that actually gets encoded into the image. requireAuth
+    // guarantees req.session.user exists by the time this runs, so
+    // every code always has a real owner.
+    const record = await qrStore.createRecord({
+      type: qrType,
+      targetUrl,
+      expiresAt,
+      userId: req.session.user.id,
+    });
 
     const baseUrl = `${req.protocol}://${req.get('host')}`;
     const scanUrl = `${baseUrl}/q/${record.qr_code}`;
@@ -186,12 +193,12 @@ async function resolveQR(req, res) {
 
 /**
  * GET /dashboard
- * Lists every QR code with its live-computed status and a
- * human-readable time-remaining string.
+ * Lists only the logged-in user's own QR codes, each with its
+ * live-computed status and a human-readable time-remaining string.
  */
 async function showDashboard(req, res) {
   try {
-    const records = await qrStore.getAllRecords();
+    const records = await qrStore.getRecordsByUser(req.session.user.id);
 
     const rows = records.map((record) => {
       const status = qrStore.computeStatus(record);
@@ -214,14 +221,34 @@ async function showDashboard(req, res) {
 
 /**
  * POST /qr/:code/revoke
- * Lets a user manually disable a code from the dashboard, regardless
- * of its expiry date.
+ * Lets a user manually disable one of their own codes from the
+ * dashboard, regardless of its expiry date. revokeRecord() scopes the
+ * update to req.session.user.id, so this silently no-ops (rather than
+ * erroring) for a code that doesn't exist or belongs to someone else
+ * — the dashboard never offers that button for a code that isn't
+ * already in the user's own list, so reaching this branch means
+ * someone hand-crafted the request.
  */
 async function revokeQR(req, res) {
   try {
-    await qrStore.revokeRecord(req.params.code);
+    await qrStore.revokeRecord(req.params.code, req.session.user.id);
   } catch (err) {
     console.error('Revoke failed:', err);
+  }
+  res.redirect('/dashboard');
+}
+
+/**
+ * POST /qr/:code/delete
+ * Permanently removes one of the user's own codes. Same ownership
+ * scoping as revokeQR — deleteRecord() only ever touches a row that
+ * both matches the code and belongs to req.session.user.id.
+ */
+async function deleteQR(req, res) {
+  try {
+    await qrStore.deleteRecord(req.params.code, req.session.user.id);
+  } catch (err) {
+    console.error('Delete failed:', err);
   }
   res.redirect('/dashboard');
 }
@@ -233,4 +260,5 @@ module.exports = {
   resolveQR,
   showDashboard,
   revokeQR,
+  deleteQR,
 };

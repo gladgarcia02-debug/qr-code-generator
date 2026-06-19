@@ -13,10 +13,22 @@ const express = require('express');
 const path = require('path');
 
 const qrRoutes = require('./routes/qrRoutes');
+const authRoutes = require('./routes/authRoutes');
 const pool = require('./config/db');
+const sessionMiddleware = require('./config/session');
+const { attachCurrentUser } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Trusts the first hop in front of the app (e.g. a platform load
+// balancer/reverse proxy on Render, Railway, Heroku, etc.) so Express
+// reads the real protocol from X-Forwarded-Proto. Without this,
+// req.protocol is always "http" behind a proxy, which would make the
+// session cookie's `secure` flag (config/session.js) never get sent.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // --- View engine setup -----------------------------------------------
 // EJS lets us write plain HTML with embedded JS for dynamic data
@@ -35,7 +47,14 @@ app.use(express.json());
 // at the site root, e.g. /css/style.css.
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Session must be mounted before any route that reads/writes
+// req.session, and attachCurrentUser right after so every view gets
+// `currentUser` for free (see views/partials/header.ejs).
+app.use(sessionMiddleware);
+app.use(attachCurrentUser);
+
 // --- Routes ---------------------------------------------------------------
+app.use('/', authRoutes);
 app.use('/', qrRoutes);
 
 // --- 404 handler ------------------------------------------------------

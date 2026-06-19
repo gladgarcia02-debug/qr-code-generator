@@ -16,16 +16,16 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 
 /**
- * Creates a new QR code record.
+ * Creates a new QR code record, owned by the given user.
  *
- * @param {{ type: string, targetUrl: string, expiresAt: Date|null }} fields
+ * @param {{ type: string, targetUrl: string, expiresAt: Date|null, userId: number }} fields
  * @returns {Promise<object>} the inserted row
  */
-async function createRecord({ type, targetUrl, expiresAt }) {
+async function createRecord({ type, targetUrl, expiresAt, userId }) {
   const insertQuery = `
-    INSERT INTO qr_codes (qr_code, type, target_url, expires_at)
-    VALUES ($1, $2, $3, $4)
-    RETURNING id, qr_code, type, target_url, created_at, expires_at, status;
+    INSERT INTO qr_codes (qr_code, type, target_url, expires_at, user_id)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, qr_code, type, target_url, created_at, expires_at, status, user_id;
   `;
 
   // Retry a few times on the (extremely unlikely) chance two requests
@@ -34,7 +34,7 @@ async function createRecord({ type, targetUrl, expiresAt }) {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const qrCode = crypto.randomBytes(4).toString('hex');
     try {
-      const result = await pool.query(insertQuery, [qrCode, type, targetUrl, expiresAt]);
+      const result = await pool.query(insertQuery, [qrCode, type, targetUrl, expiresAt, userId]);
       return result.rows[0];
     } catch (err) {
       const isUniqueViolation = err && err.code === '23505';
@@ -48,8 +48,10 @@ async function createRecord({ type, targetUrl, expiresAt }) {
 
 /**
  * Looks up a single record by its short public ID (the part of the
- * URL after /q/). Returns null rather than throwing if not found —
- * "not found" is an expected, normal outcome here, not an error.
+ * URL after /q/), regardless of owner — this backs the public scan
+ * route, which has no concept of "logged in". Returns null rather
+ * than throwing if not found — "not found" is an expected, normal
+ * outcome here, not an error.
  */
 async function getRecordByCode(qrCode) {
   const result = await pool.query('SELECT * FROM qr_codes WHERE qr_code = $1', [qrCode]);
@@ -57,10 +59,17 @@ async function getRecordByCode(qrCode) {
 }
 
 /**
- * Fetches every record for the dashboard, newest first.
+ * Fetches every record owned by the given user for the dashboard,
+ * newest first. Scoping by user_id directly in the query — rather
+ * than fetching everything and filtering in JS — is what guarantees a
+ * user can never see another user's codes, even if a future code
+ * change forgets to re-check ownership before rendering.
  */
-async function getAllRecords() {
-  const result = await pool.query('SELECT * FROM qr_codes ORDER BY created_at DESC');
+async function getRecordsByUser(userId) {
+  const result = await pool.query(
+    'SELECT * FROM qr_codes WHERE user_id = $1 ORDER BY created_at DESC',
+    [userId]
+  );
   return result.rows;
 }
 
@@ -92,11 +101,33 @@ function computeStatus(record) {
 /**
  * Manually disables a code regardless of its expiry date — e.g. the
  * owner wants to kill a link immediately after sharing it by mistake.
+ *
+ * The ownership check (`AND user_id = $2`) is part of the query
+ * itself, not a separate "fetch then check" step — that way there's
+ * no window where a different user's code could be revoked, and a
+ * code that exists but belongs to someone else fails exactly the same
+ * way as a code that doesn't exist at all (no information leak).
+ *
+ * @returns {Promise<boolean>} true if a row owned by this user was revoked
  */
-async function revokeRecord(qrCode) {
+async function revokeRecord(qrCode, userId) {
   const result = await pool.query(
-    "UPDATE qr_codes SET status = 'revoked' WHERE qr_code = $1 RETURNING id",
-    [qrCode]
+    "UPDATE qr_codes SET status = 'revoked' WHERE qr_code = $1 AND user_id = $2 RETURNING id",
+    [qrCode, userId]
+  );
+  return result.rowCount > 0;
+}
+
+/**
+ * Permanently deletes a single code, scoped to its owner the same way
+ * revokeRecord() is.
+ *
+ * @returns {Promise<boolean>} true if a row owned by this user was deleted
+ */
+async function deleteRecord(qrCode, userId) {
+  const result = await pool.query(
+    'DELETE FROM qr_codes WHERE qr_code = $1 AND user_id = $2 RETURNING id',
+    [qrCode, userId]
   );
   return result.rowCount > 0;
 }
@@ -125,9 +156,10 @@ async function purgeExpired(olderThanDays = 30) {
 module.exports = {
   createRecord,
   getRecordByCode,
-  getAllRecords,
+  getRecordsByUser,
   isExpired,
   computeStatus,
   revokeRecord,
+  deleteRecord,
   purgeExpired,
 };

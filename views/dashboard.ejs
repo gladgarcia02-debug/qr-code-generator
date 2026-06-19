@@ -1,8 +1,13 @@
 <%- include('partials/header', { title: 'QR Code Dashboard' }) %>
 
   <section class="hero hero--compact">
-    <p class="hero__eyebrow">All codes</p>
-    <h1 class="hero__title">Dashboard</h1>
+    <p class="hero__eyebrow">Your codes</p>
+    <div class="dashboard-meta">
+      <h1 class="hero__title">Dashboard</h1>
+      <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+        <p class="dashboard-meta__user">Logged in as <strong><%= currentUser.username %></strong> (<%= currentUser.email %>)</p>
+      <% } %>
+    </div>
     <p class="hero__subtitle">Every QR code you've generated, with its live status and time remaining.</p>
   </section>
 
@@ -48,10 +53,13 @@
                 <td><%= row.timeRemaining %></td>
                 <td>
                   <% if (row.status === 'active') { %>
-                    <form action="/qr/<%= row.qr_code %>/revoke" method="POST" onsubmit="return confirm('Revoke this QR code? It will stop working immediately.');">
+                    <form action="/qr/<%= row.qr_code %>/revoke" method="POST" onsubmit="return confirm('Revoke this QR code? It will stop working immediately.');" style="display: inline;">
                       <button type="submit" class="btn-link btn-link--danger">Revoke</button>
                     </form>
                   <% } %>
+                  <form action="/qr/<%= row.qr_code %>/delete" method="POST" onsubmit="return confirm('Permanently delete this QR code? This cannot be undone.');" style="display: inline; margin-left: 10px;">
+                    <button type="submit" class="btn-link btn-link--danger">Delete</button>
+                  </form>
                 </td>
               </tr>
             <% }) %>

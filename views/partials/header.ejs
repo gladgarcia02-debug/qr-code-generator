@@ -32,8 +32,18 @@
         <span class="brand__text">QR<span class="brand__accent">Forge</span></span>
       </a>
       <nav class="topbar__nav">
-        <a href="/dashboard" class="topbar__nav-link">Dashboard</a>
-        <span class="topbar__tag">No tracking &middot; No account</span>
+        <% if (typeof currentUser !== 'undefined' && currentUser) { %>
+          <a href="/dashboard" class="topbar__nav-link">Dashboard</a>
+          <div class="topbar__user">
+            <span class="topbar__user-name"><%= currentUser.username %></span>
+            <form action="/logout" method="POST">
+              <button type="submit" class="topbar__logout">Log out</button>
+            </form>
+          </div>
+        <% } else { %>
+          <a href="/login" class="topbar__nav-link">Log in</a>
+          <a href="/register" class="topbar__nav-link">Sign up</a>
+        <% } %>
       </nav>
     </div>
   </header>

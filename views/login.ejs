@@ -1,0 +1,59 @@
+<%- include('partials/header', { title: 'Log In' }) %>
+
+  <section class="hero hero--compact">
+    <p class="hero__eyebrow">Welcome back</p>
+    <h1 class="hero__title">Log in to your account</h1>
+    <p class="hero__subtitle">Sign in to generate codes and manage the ones you already own.</p>
+  </section>
+
+  <div class="auth-shell">
+    <div class="panel panel--auth">
+      <h2 class="panel__title">Log in</h2>
+
+      <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+        <div class="alert alert--error" role="alert">
+          <strong>Please fix the following:</strong>
+          <ul>
+            <% errors.forEach(function(err) { %>
+              <li><%= err.msg %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+
+      <form action="/login" method="POST" novalidate>
+        <input type="hidden" name="next" value="<%= typeof next !== 'undefined' ? next : '' %>" />
+
+        <div class="field">
+          <label for="identifier" class="field-label">Username or email</label>
+          <input
+            type="text"
+            id="identifier"
+            name="identifier"
+            class="field-input"
+            autocomplete="username"
+            value="<%= (typeof formData !== 'undefined' && formData.identifier) ? formData.identifier : '' %>"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="password" class="field-label">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="field-input"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn btn--primary">Log in</button>
+      </form>
+
+      <p class="auth-switch">Don't have an account? <a href="/register">Create one</a>.</p>
+    </div>
+  </div>
+
+<%- include('partials/footer') %>

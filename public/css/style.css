@@ -123,6 +123,37 @@ img { max-width: 100%; display: block; }
   white-space: nowrap;
 }
 
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--text-on-ink-muted);
+}
+
+.topbar__user-name {
+  color: var(--text-on-ink);
+  font-weight: 600;
+}
+
+.topbar__logout {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-on-ink);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.topbar__logout:hover {
+  border-color: var(--accent);
+  background: rgba(255, 107, 74, 0.1);
+}
+
 /* ---------- Page shell --------------------------------------------------- */
 .page {
   max-width: 1080px;
@@ -463,6 +494,47 @@ img { max-width: 100%; display: block; }
 .expiry-row__unit {
   flex: 1.4;
   min-width: 0;
+}
+
+/* ---------- Auth pages (login / register) ------------------------------------ */
+.auth-shell {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 20px;
+}
+
+.panel--auth {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-switch {
+  margin: 20px 0 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-on-paper-muted);
+}
+
+.auth-switch a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.dashboard-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dashboard-meta__user {
+  font-size: 0.92rem;
+  color: var(--text-on-ink-muted);
+}
+
+.dashboard-meta__user strong {
+  color: var(--text-on-ink);
 }
 
 /* ---------- Status badges (dashboard) ----------------------------------------- */
